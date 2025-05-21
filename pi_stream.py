@@ -1,3 +1,5 @@
+# /home/pi/pi_stream.py
+
 import socketio
 import time
 import io
@@ -11,8 +13,6 @@ NAMESPACE = '/pi'
 sio = socketio.Client()
 
 running = False
-resolution = (320, 240)  # default
-picam2 = Picamera2()
 
 @sio.event(namespace=NAMESPACE)
 def connect():
@@ -26,27 +26,6 @@ def connect_error(e):
 def disconnect():
     print('❌ Pi disconnected from server.')
 
-@sio.on('change_resolution', namespace=NAMESPACE)
-def on_change_resolution(data):
-    global running, resolution
-    width = data.get('width', 640)
-    height = data.get('height', 480)
-    print(f"🔧 Changing resolution to {width}x{height}")
-    resolution = (width, height)
-    if running:
-        running = False
-        time.sleep(1)  # let camera stop
-        configure_camera()
-        running = True  # resume
-        print("✅ Resolution updated and resumed stream.")
-
-def configure_camera():
-    global picam2, resolution
-    picam2.stop()
-    config = picam2.create_preview_configuration(main={"size": resolution})
-    picam2.configure(config)
-    picam2.start()
-
 @sio.on('start_stream', namespace=NAMESPACE)
 def on_start_stream():
     global running
@@ -54,16 +33,20 @@ def on_start_stream():
         return
     running = True
     print('▶️ start_stream received. Beginning streaming...')
-    configure_camera()
+    # configure picamera2
+    picam2 = Picamera2()
+    config = picam2.create_preview_configuration(main={"size": (800, 600)})
+    picam2.configure(config)
+    picam2.start()
     try:
         while running:
-            frame = picam2.capture_array()
-            img = Image.fromarray(frame).convert("RGB")
+            frame = picam2.capture_array()               # Grab frame
+            img = Image.fromarray(frame).convert("RGB")                 # To PIL
             buf = io.BytesIO()
-            img.save(buf, format='JPEG', quality=50)
+            img.save(buf, format='JPEG', quality=50)     # Compress
             b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-            sio.emit('frame', b64, namespace=NAMESPACE)
-            time.sleep(0.1)
+            sio.emit('frame', b64, namespace=NAMESPACE)  # Send
+            time.sleep(0.1)                              # ~10fps
     finally:
         picam2.stop()
         print('🛑 Camera released.')
