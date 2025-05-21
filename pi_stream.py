@@ -7,7 +7,7 @@ import base64
 from picamera2 import Picamera2
 from PIL import Image
 
-SERVER_URL = 'http://192.168.1.200:9265'  # your server's LAN IP
+SERVER_URL = 'http://75.183.209.207:9265'  # your server's LAN IP
 NAMESPACE = '/pi'
 
 sio = socketio.Client()
