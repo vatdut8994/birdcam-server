@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BirdCam</title>
+  <style>
+    body {
+      background-color: black;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #video {
+      border: 2px solid white;
+      width: auto;
+      height: 80%;
+    }
+    #controls {
+      margin-top: 20px;
+    }
+    label, select {
+      color: white;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <img id="video" src="">
+  <div id="controls">
+    <label for="resolution">Resolution:</label>
+    <select id="resolution">
+      <option value="320x240">320x240</option>
+      <option value="640x480" selected>640x480</option>
+      <option value="1280x720">1280x720</option>
+    </select>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const img = document.getElementById("video");
+    const resolutionSelect = document.getElementById("resolution");
+
+    socket.on("frame", (data) => {
+      img.src = "data:image/jpeg;base64," + data;
+    });
+
+    resolutionSelect.addEventListener("change", () => {
+      const [w, h] = resolutionSelect.value.split("x");
+      socket.emit("change_resolution", { width: parseInt(w), height: parseInt(h) });
+    });
+  </script>
+</body>
+</html>
