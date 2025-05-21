@@ -1,55 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>BirdCam</title>
   <style>
-    body {
-      background-color: black;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    #video {
-      border: 2px solid white;
-      width: auto;
-      height: 80%;
-    }
-    #controls {
-      margin-top: 20px;
-    }
-    label, select {
-      color: white;
-      font-size: 18px;
-    }
+    body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; }
+    img { max-width:100vw; max-height:100vh; }
   </style>
 </head>
 <body>
-  <img id="video" src="">
-  <div id="controls">
-    <label for="resolution">Resolution:</label>
-    <select id="resolution">
-      <option value="320x240">320x240</option>
-      <option value="640x480" selected>640x480</option>
-      <option value="1280x720">1280x720</option>
-    </select>
-  </div>
-
+  <img id="stream" src="" alt="BirdCam Stream">
+  <!-- 1️⃣ Load the exact same Socket.IO version your server uses -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
-    const img = document.getElementById("video");
-    const resolutionSelect = document.getElementById("resolution");
+    // 2️⃣ Connect RELATIVE to your server, namespace '/client'
+    const socket = io('/client');
 
-    socket.on("frame", (data) => {
-      img.src = "data:image/jpeg;base64," + data;
+    const img = document.getElementById('stream');
+
+    socket.on('connect', () => {
+      console.log('► client connected, socket id:', socket.id);
     });
-
-    resolutionSelect.addEventListener("change", () => {
-      const [w, h] = resolutionSelect.value.split("x");
-      socket.emit("change_resolution", { width: parseInt(w), height: parseInt(h) });
+    socket.on('frame', data => {
+      // data is a base64 JPEG
+      img.src = 'data:image/jpeg;base64,' + data;
+    });
+    socket.on('disconnect', reason => {
+      console.warn('⏸ client disconnected:', reason);
+    });
+    socket.on('connect_error', err => {
+      console.error('❌ connect_error:', err);
     });
   </script>
 </body>
