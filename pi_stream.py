@@ -7,6 +7,16 @@ import base64
 from picamera2 import Picamera2
 from PIL import Image
 
+
+def wait_for_camera(retries=5, delay=2):
+    for i in range(retries):
+        try:
+            return Picamera2()
+        except RuntimeError as e:
+            print(f"Camera init failed ({i+1}/{retries}): {e}")
+            time.sleep(delay)
+    raise RuntimeError("Camera failed to initialize after retries.")
+
 SERVER_URL = 'http://192.168.1.200:9265'  # your server's LAN IP
 NAMESPACE = '/pi'
 
@@ -34,7 +44,7 @@ def on_start_stream():
     running = True
     print('▶️ start_stream received. Beginning streaming...')
     # configure picamera2
-    picam2 = Picamera2()
+    picam2 = wait_for_camera()
     config = picam2.create_preview_configuration(main={"size": (640, 480)})
     picam2.configure(config)
     picam2.start()
